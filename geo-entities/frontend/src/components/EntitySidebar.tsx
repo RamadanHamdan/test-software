@@ -10,6 +10,9 @@ interface Props {
   entities: Entity[]
   selected: Entity | null
   onSelect: (id: string | null) => void
+  onCreate: () => void
+  onEdit: (entity: Entity) => void
+  onDelete: (entity: Entity) => void
 }
 
 function StatusDot({ status }: { status: EntityStatus }) {
@@ -24,17 +27,35 @@ function StatusDot({ status }: { status: EntityStatus }) {
 const formatDate = (iso: string) =>
   new Date(iso).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })
 
-export default function EntitySidebar({ entities, selected, onSelect }: Props) {
+export default function EntitySidebar({
+  entities,
+  selected,
+  onSelect,
+  onCreate,
+  onEdit,
+  onDelete,
+}: Props) {
   return (
     <aside className="flex h-full w-80 shrink-0 flex-col border-r border-gray-200 bg-white">
-      <header className="border-b border-gray-200 px-4 py-3">
-        <h1 className="text-base font-semibold">Geo Entities</h1>
-        <p className="text-xs text-gray-500">{entities.length} entity</p>
+      <header className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
+        <div>
+          <h1 className="text-base font-semibold">Geo Entities</h1>
+          <p className="text-xs text-gray-500">{entities.length} entity</p>
+        </div>
+        <button
+          type="button"
+          onClick={onCreate}
+          className="rounded bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-700"
+        >
+          + Tambah
+        </button>
       </header>
 
       <ul className="flex-1 overflow-y-auto">
         {entities.length === 0 && (
-          <li className="px-4 py-6 text-sm text-gray-500">Belum ada entity.</li>
+          <li className="px-4 py-6 text-sm text-gray-500">
+            Belum ada entity. Klik “+ Tambah” untuk membuat yang pertama.
+          </li>
         )}
         {entities.map((e) => (
           <li key={e.id}>
@@ -87,6 +108,22 @@ export default function EntitySidebar({ entities, selected, onSelect }: Props) {
             <dt className="text-gray-500">Diubah</dt>
             <dd>{formatDate(selected.updated_at)}</dd>
           </dl>
+          <div className="mt-3 flex gap-2">
+            <button
+              type="button"
+              onClick={() => onEdit(selected)}
+              className="rounded border border-gray-300 bg-white px-3 py-1.5 text-sm hover:bg-gray-100"
+            >
+              Ubah
+            </button>
+            <button
+              type="button"
+              onClick={() => onDelete(selected)}
+              className="rounded border border-red-200 bg-white px-3 py-1.5 text-sm text-red-600 hover:bg-red-50"
+            >
+              Hapus
+            </button>
+          </div>
         </section>
       )}
     </aside>

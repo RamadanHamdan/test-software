@@ -29,3 +29,11 @@ export function markerIcon(status: EntityStatus, selected: boolean): DivIcon {
   cache.set(key, icon)
   return icon
 }
+
+// Penanda lokasi yang sedang dipilih di form (bisa diseret).
+export const draftIcon: DivIcon = divIcon({
+  className: '',
+  html: '<span style="display:block;width:26px;height:26px;border-radius:9999px;background:#2563eb;border:4px solid #fff;box-shadow:0 0 0 2px #2563eb, 0 2px 8px rgba(0,0,0,.4)"></span>',
+  iconSize: [26, 26],
+  iconAnchor: [13, 13],
+})

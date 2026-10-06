@@ -30,3 +30,8 @@ export const STATUS_LABELS: Record<EntityStatus, string> = {
   inactive: 'Nonaktif',
   maintenance: 'Perawatan',
 }
+
+export interface Coords {
+  lat: number
+  lng: number
+}
