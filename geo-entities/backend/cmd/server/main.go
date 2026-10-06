@@ -36,7 +36,7 @@ func getenv(key, fallback string) string {
 
 func run() error {
 	var (
-		dbURL   = getenv("DATABASE_URL", "postgres://geo:geo@localhost:5432/geo?sslmode=disable")
+		dbURL   = getenv("DATABASE_URL", "postgres://geo:geo@localhost:5433/geo?sslmode=disable")
 		port    = getenv("PORT", "8080")
 		origins = strings.Split(getenv("CORS_ORIGINS", "http://localhost:5173"), ",")
 	)
