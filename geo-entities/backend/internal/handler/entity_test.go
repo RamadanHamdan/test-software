@@ -2,6 +2,7 @@ package handler_test
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -12,25 +13,50 @@ import (
 	"geo-entities/internal/repository"
 )
 
+const (
+	knownID   = "00000000-0000-0000-0000-000000000001" // dianggap ada oleh fakeRepo
+	unknownID = "00000000-0000-0000-0000-000000000099" // dianggap tidak ada
+)
+
 // fakeRepo cukup untuk menguji lapisan HTTP tanpa database.
+// Hanya knownID yang "ada"; id lain menghasilkan ErrNotFound.
 type fakeRepo struct{}
+
+func build(id string, in entity.Input) entity.Entity {
+	return entity.Entity{
+		ID: id, Name: in.Name, Type: in.Type, Status: in.Status, Description: in.Description,
+		Latitude: *in.Latitude, Longitude: *in.Longitude,
+	}
+}
 
 func (fakeRepo) List(context.Context, repository.ListFilter) ([]entity.Entity, error) {
 	return []entity.Entity{}, nil
 }
-func (fakeRepo) Get(context.Context, string) (entity.Entity, error) {
-	return entity.Entity{}, repository.ErrNotFound
+
+func (fakeRepo) Get(_ context.Context, id string) (entity.Entity, error) {
+	if id != knownID {
+		return entity.Entity{}, repository.ErrNotFound
+	}
+	return entity.Entity{ID: id, Name: "Truk 01", Type: entity.TypeVehicle, Status: entity.StatusActive}, nil
 }
+
 func (fakeRepo) Create(_ context.Context, in entity.Input) (entity.Entity, error) {
-	return entity.Entity{
-		ID: "00000000-0000-0000-0000-000000000001", Name: in.Name, Type: in.Type,
-		Status: in.Status, Latitude: *in.Latitude, Longitude: *in.Longitude,
-	}, nil
+	return build(knownID, in), nil
 }
-func (fakeRepo) Update(context.Context, string, entity.Input) (entity.Entity, error) {
-	return entity.Entity{}, repository.ErrNotFound
+
+func (fakeRepo) Update(_ context.Context, id string, in entity.Input) (entity.Entity, error) {
+	if id != knownID {
+		return entity.Entity{}, repository.ErrNotFound
+	}
+	return build(id, in), nil
 }
-func (fakeRepo) Delete(context.Context, string) error { return repository.ErrNotFound }
+
+func (fakeRepo) Delete(_ context.Context, id string) error {
+	if id != knownID {
+		return repository.ErrNotFound
+	}
+	return nil
+}
 
 func do(method, path, body string) *httptest.ResponseRecorder {
 	h := handler.NewEntityHandler(fakeRepo{}).Routes()
@@ -41,13 +67,15 @@ func do(method, path, body string) *httptest.ResponseRecorder {
 	return rec
 }
 
+const validBody = `{"name":"Truk 01 (baru)","type":"vehicle","status":"maintenance","latitude":-6.9,"longitude":107.6}`
+
 func TestCreate(t *testing.T) {
 	tests := []struct {
 		name string
 		body string
 		want int
 	}{
-		{"valid", `{"name":"Truk 01","type":"vehicle","status":"active","latitude":-6.9,"longitude":107.6}`, 201},
+		{"valid", validBody, 201},
 		{"koordinat 0,0 itu valid", `{"name":"X","type":"other","status":"active","latitude":0,"longitude":0}`, 201},
 		{"latitude > 90", `{"name":"X","type":"other","status":"active","latitude":91,"longitude":0}`, 422},
 		{"longitude < -180", `{"name":"X","type":"other","status":"active","latitude":0,"longitude":-181}`, 422},
@@ -68,11 +96,81 @@ func TestCreate(t *testing.T) {
 }
 
 func TestGet(t *testing.T) {
-	if got := do(http.MethodGet, "/bukan-uuid", "").Code; got != 400 {
-		t.Errorf("id invalid: status = %d, want 400", got)
+	tests := []struct {
+		name string
+		path string
+		want int
+	}{
+		{"ada", "/" + knownID, 200},
+		{"tidak ada", "/" + unknownID, 404},
+		{"id bukan UUID", "/bukan-uuid", 400},
 	}
-	if got := do(http.MethodGet, "/00000000-0000-0000-0000-000000000099", "").Code; got != 404 {
-		t.Errorf("id tidak ada: status = %d, want 404", got)
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := do(http.MethodGet, tc.path, "").Code; got != tc.want {
+				t.Fatalf("status = %d, want %d", got, tc.want)
+			}
+		})
+	}
+}
+
+func TestUpdate(t *testing.T) {
+	tests := []struct {
+		name string
+		path string
+		body string
+		want int
+	}{
+		{"berhasil", "/" + knownID, validBody, 200},
+		{"id tidak ada", "/" + unknownID, validBody, 404},
+		{"id bukan UUID", "/abc", validBody, 400},
+		{"latitude di luar rentang", "/" + knownID, `{"name":"X","type":"other","status":"active","latitude":100,"longitude":0}`, 422},
+		{"PUT harus penuh, body parsial ditolak", "/" + knownID, `{"name":"X"}`, 422},
+		{"JSON rusak", "/" + knownID, `{`, 400},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := do(http.MethodPut, tc.path, tc.body).Code; got != tc.want {
+				t.Fatalf("status = %d, want %d", got, tc.want)
+			}
+		})
+	}
+}
+
+func TestUpdateReturnsNewValues(t *testing.T) {
+	rec := do(http.MethodPut, "/"+knownID, validBody)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200", rec.Code)
+	}
+	var got entity.Entity
+	if err := json.Unmarshal(rec.Body.Bytes(), &got); err != nil {
+		t.Fatalf("response bukan JSON entity: %v", err)
+	}
+	if got.Name != "Truk 01 (baru)" || got.Status != entity.StatusMaintenance {
+		t.Errorf("response tidak mencerminkan input: %+v", got)
+	}
+}
+
+func TestDelete(t *testing.T) {
+	tests := []struct {
+		name string
+		path string
+		want int
+	}{
+		{"berhasil", "/" + knownID, 204},
+		{"tidak ada", "/" + unknownID, 404},
+		{"id bukan UUID", "/abc", 400},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := do(http.MethodDelete, tc.path, "").Code; got != tc.want {
+				t.Fatalf("status = %d, want %d", got, tc.want)
+			}
+		})
+	}
+
+	if n := do(http.MethodDelete, "/"+knownID, "").Body.Len(); n != 0 {
+		t.Errorf("204 tidak boleh punya body, dapat %d byte", n)
 	}
 }
 

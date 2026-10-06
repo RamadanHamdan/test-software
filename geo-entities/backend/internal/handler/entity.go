@@ -112,13 +112,34 @@ func (h *EntityHandler) Create(w http.ResponseWriter, r *http.Request) {
 // TODO(kamu): kerjakan sendiri, polanya sama dengan Get + Create:
 //  1. parseID  2. h.bind  3. h.repo.Update  4. h.fail jika error  5. writeJSON 200
 func (h *EntityHandler) Update(w http.ResponseWriter, r *http.Request) {
-	writeError(w, http.StatusNotImplemented, "not_implemented", "", nil)
+	id, ok := parseID(w, r)
+	if !ok {
+		return
+	}
+	in, ok := h.bind(w, r)
+	if !ok {
+		return
+	}
+	e, err := h.repo.Update(r.Context(), id, in)
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, e)
 }
 
 // DELETE /api/entities/{id}
 // TODO(kamu): parseID -> h.repo.Delete -> h.fail jika error -> 204 tanpa body.
 func (h *EntityHandler) Delete(w http.ResponseWriter, r *http.Request) {
-	writeError(w, http.StatusNotImplemented, "not_implemented", "", nil)
+	id, ok := parseID(w, r)
+	if !ok {
+		return
+	}
+	if err := h.repo.Delete(r.Context(), id); err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
 }
 
 // bind men-decode body lalu memvalidasinya. Jika gagal, response error sudah
