@@ -133,11 +133,11 @@ Aturan ini ada di **tiga tempat** dan harus diubah bersamaan:
 
 Dipakai untuk bagian "Workflow Agentic AI" di README.
 
-| Bagian | Dikerjakan AI | Dikerjakan/ditulis sendiri | Cara verifikasi | Koreksi yang saya lakukan |
+| Bagian | Dikerjakan/ditulis sendiri | Cara verifikasi | Koreksi yang saya lakukan |
 |---|---|---|---|---|
-| Skema DB + migrasi | | | | |
-| Backend: entity + repository | | | | |
-| Backend: handler | | | | |
-| Frontend: map + marker | | | | |
-| Frontend: form + validasi | | | | |
-| Docker + dokumentasi | | | | |
+| Skema DB + migrasi | dikerjakan dan dibantu AI | Verifikasi manual | 
+| Backend: entity + repository | dikerjakan dan dibantu AI | Verifikasi manual | 
+| Backend: handler | dikerjakan dan dibantu AI | Verifikasi manual | 
+| Frontend: map + marker | Dikerjakan AI | Verifikasi manual | testing di frontend untuk semua fungsi nya
+| Frontend: form + validasi | Dikerjakan AI | Verifikasi manual | testing di frontend untuk semua fungsi nya
+| Docker + dokumentasi | Dikerjakan AI | Verifikasi manual | Ada beberapa koreksi

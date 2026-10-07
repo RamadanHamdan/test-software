@@ -253,4 +253,3 @@ Aturan yang sama diterapkan di tiga lapis: Zod di frontend (`frontend/src/lib/sc
 
 - **Port database bentrok.** Konfigurasi awal memakai port host 5432, tetapi di mesin saya sudah ada PostgreSQL lokal sehingga backend gagal login ke "database" yang salah. Saya mendiagnosis dengan memeriksa port yang aktif, lalu memindahkan port host container ke 5433.
 - **Quoting JSON di PowerShell.** Perintah curl contoh tidak langsung bekerja di PowerShell; body JSON saya pindahkan ke file.
-- **[ISI: koreksi atau temuan lain yang benar-benar Anda alami, mis. bug yang ditemukan di browser atau bagian kode yang Anda ubah.]**
