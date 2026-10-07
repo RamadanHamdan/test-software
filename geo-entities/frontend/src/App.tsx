@@ -16,15 +16,15 @@ export default function App() {
   const [draft, setDraft] = useState<Coords | null>(null)
   const [deleting, setDeleting] = useState<Entity | null>(null)
 
-  if (isPending) return <p className="p-6">Memuat…</p>
+  if (isPending) return <p className='p-6'>Memuat…</p>
   if (error) {
     return (
-      <div className="p-6">
-        <p className="mb-3 text-red-600">Gagal memuat data: {error.message}</p>
+      <div className='p-6'>
+        <p className='mb-3 text-red-600'>Gagal memuat data: {error.message}</p>
         <button
-          type="button"
+          type='button'
           onClick={() => refetch()}
-          className="rounded bg-gray-900 px-3 py-1.5 text-sm text-white"
+          className='rounded bg-gray-900 px-3 py-1.5 text-sm text-white'
         >
           Coba lagi
         </button>
@@ -34,7 +34,8 @@ export default function App() {
 
   // Detail diambil dari data list; kalau entity dihapus, selected otomatis jadi null.
   const selected = data.find((e) => e.id === selectedId) ?? null
-  const editing = mode.kind === 'edit' ? (data.find((e) => e.id === mode.id) ?? null) : null
+  const editing =
+    mode.kind === 'edit' ? (data.find((e) => e.id === mode.id) ?? null) : null
   const formOpen = mode.kind === 'create' || editing !== null
 
   const closeForm = () => {
@@ -70,7 +71,7 @@ export default function App() {
   }
 
   return (
-    <div className="flex h-screen">
+    <div className='flex h-screen'>
       {formOpen ? (
         <EntityForm
           // key: form di-remount saat pindah antara tambah / ubah entity lain.
@@ -95,7 +96,7 @@ export default function App() {
         />
       )}
 
-      <main className="min-w-0 flex-1">
+      <main className='min-w-0 flex-1'>
         <EntityMap
           entities={data}
           selected={selected}
@@ -108,9 +109,9 @@ export default function App() {
 
       {deleting && (
         <ConfirmDialog
-          title="Hapus entity?"
+          title='Hapus entity?'
           message={`“${deleting.name}” akan dihapus permanen. Tindakan ini tidak dapat dibatalkan.`}
-          confirmLabel="Hapus"
+          confirmLabel='Hapus'
           pending={del.isPending}
           error={del.error?.message}
           onConfirm={confirmDelete}

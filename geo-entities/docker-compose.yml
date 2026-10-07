@@ -1,3 +1,10 @@
+# Jalankan seluruh aplikasi:   docker compose up --build
+#   Frontend : http://localhost:3000
+#   API      : http://localhost:8080/api/entities
+#
+# Hanya database (untuk development lokal):   docker compose up -d db
+# Reset total (hapus data):                   docker compose down -v
+
 services:
   db:
     image: postgres:16-alpine
@@ -6,18 +13,44 @@ services:
       POSTGRES_PASSWORD: geo
       POSTGRES_DB: geo
     ports:
-      - '5433:5432'
+      # Host 5433 (bukan 5432) agar tidak bentrok dengan PostgreSQL lokal.
+      - "5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-      # Skrip init hanya jalan saat volume masih kosong (start pertama).
-      # Reset: docker compose down -v && docker compose up -d db
+      # Skrip init hanya dijalankan saat volume masih kosong (start pertama).
       - ./backend/migrations/000001_create_entities.up.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
       - ./db/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql:ro
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U geo -d geo']
+      test: ["CMD-SHELL", "pg_isready -U geo -d geo"]
       interval: 5s
       timeout: 3s
       retries: 10
+
+  backend:
+    build: ./backend
+    environment:
+      # Di dalam jaringan compose, DB dijangkau lewat nama service + port internal 5432.
+      DATABASE_URL: postgres://geo:geo@db:5432/geo?sslmode=disable
+      PORT: "8080"
+      CORS_ORIGINS: http://localhost:3000
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/api/health || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  frontend:
+    build: ./frontend
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "3000:80"
 
 volumes:
   pgdata:
